@@ -21,6 +21,7 @@ If macOS blocks the app because it is from an unidentified developer, right-clic
 
 - Turns off all built-in and external displays.
 - Keeps the Mac itself running instead of sleeping.
+- Turns off all connected extended displays while keeping the computer running normally, which is useful for downloads, long local tasks, and vibe coding.
 - Uses no network connection and collects no data.
 - Exits automatically after keyboard or mouse activity, so it does not stay resident.
 
