@@ -17,6 +17,8 @@ A small local-only macOS utility. Double-click `猫猫熄屏.app` to put all con
 
 If macOS blocks the app because it is from an unidentified developer, right-click `猫猫熄屏.app` and choose Open the first time.
 
+If you pin it to the Dock, click it once and wait 2 seconds. Do not double-click or move the mouse, because mouse activity can immediately wake the displays again.
+
 ## What It Does
 
 - Turns off all built-in and external displays.
@@ -32,6 +34,7 @@ If macOS blocks the app because it is from an unidentified developer, right-clic
 - This is not macOS system sleep, screen lock, screen saver, or a video-player screen-off button.
 - It only puts displays to sleep while trying to keep downloads, computation, syncing, or research tasks running.
 - Behavior can vary across macOS versions, monitors, docks, and power settings.
+- When launching from the Dock, click once and wait for the displays to sleep.
 
 ## Build from Source
 
