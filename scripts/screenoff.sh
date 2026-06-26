@@ -3,7 +3,7 @@ set -u
 
 LOG_FILE="${TMPDIR:-/tmp}/sleepycat-screen-off.log"
 LOCK_DIR="${TMPDIR:-/tmp}/sleepycat-screen-off.lock"
-START_DELAY_SECONDS="${SLEEPYCAT_START_DELAY_SECONDS:-2}"
+START_DELAY_SECONDS="${SLEEPYCAT_START_DELAY_SECONDS:-4}"
 caffeinate_pid=""
 
 log() {
@@ -44,14 +44,19 @@ current_idle_seconds() {
 }
 
 request_display_sleep() {
-  local attempt
-  for attempt in 1 2; do
-    if /usr/bin/pmset displaysleepnow >> "$LOG_FILE" 2>&1; then
+  local attempt output status
+  for attempt in 1 2 3 4; do
+    output="$(/usr/bin/pmset displaysleepnow 2>&1)"
+    status=$?
+    if [[ -n "$output" ]]; then
+      log "pmset output on attempt $attempt: $output"
+    fi
+    if [[ "$status" -eq 0 && "$output" != *"Failed"* && "$output" != *"failed"* && "$output" != *"error"* ]]; then
       log "Requested display sleep"
       return 0
     fi
-    log "Display sleep request failed on attempt $attempt"
-    /bin/sleep 1
+    log "Display sleep request failed on attempt $attempt with status $status"
+    /bin/sleep 2
   done
   return 1
 }
@@ -80,8 +85,8 @@ fi
 caffeinate_pid=$!
 log "Started caffeinate process: $caffeinate_pid"
 
-# A Dock click is also mouse activity. Wait briefly so the click does not wake
-# the displays immediately after we ask macOS to sleep them.
+# A Dock click is also mouse activity. Wait briefly so the click does not keep
+# the display-sleep request from being accepted.
 /bin/sleep "$START_DELAY_SECONDS"
 
 if ! request_display_sleep; then
