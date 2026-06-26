@@ -6,7 +6,7 @@ Chinese name: 猫猫熄屏
   <img src="assets/icon-cropped-preview.png" width="128" alt="SleepyCat Screen Off icon">
 </p>
 
-A small local-only macOS utility. Double-click `猫猫熄屏.app` to put all connected displays to sleep while keeping the Mac running. When you touch the mouse or keyboard, the displays wake up and the background wake process exits automatically.
+A small local-only macOS utility. Double-click `猫猫熄屏.app` to put all connected displays into real display sleep while keeping the Mac awake for 8 hours so downloads, computation, syncing, or local tasks can continue.
 
 ## Download and Use
 
@@ -17,26 +17,24 @@ A small local-only macOS utility. Double-click `猫猫熄屏.app` to put all con
 
 If macOS blocks the app because it is from an unidentified developer, right-click `猫猫熄屏.app` and choose Open the first time.
 
-If you pin it to the Dock, click it once and wait 4 seconds. Do not double-click or move the mouse, because mouse activity can make macOS reject display sleep or wake the displays again.
+If you pin it to the Dock, click it once. This is the fixed 8-hour version, not an indefinite mode.
 
 ## What It Does
 
 - Turns off all built-in and external displays.
-- Keeps the Mac itself running instead of sleeping.
+- Keeps the Mac itself running for a fixed 8 hours.
 - Turns off all connected extended displays while keeping the computer running normally, which is useful for downloads, long local tasks, and vibe coding.
-- Falls back to a full-screen blackout mode if macOS rejects true display sleep.
 - Uses no network connection and collects no data.
-- Exits automatically after keyboard or mouse activity, so it does not stay resident.
+- Uses macOS native `pmset displaysleepnow`; it does not use a blackout overlay fallback.
 
 ## Important Notes
 
 - Use it while connected to power.
 - Do not close the laptop lid; closing the lid usually triggers system sleep.
 - This is not macOS system sleep, screen lock, screen saver, or a video-player screen-off button.
-- It only puts displays to sleep while trying to keep downloads, computation, syncing, or research tasks running.
+- It only puts displays to sleep while keeping the computer awake for 8 hours so downloads, computation, syncing, or research tasks can continue.
 - Behavior can vary across macOS versions, monitors, docks, and power settings.
-- When launching from the Dock, click once and wait a few seconds.
-- The fallback blackout mode is not hardware display power-off, but it prevents a no-op when `pmset displaysleepnow` is rejected by macOS.
+- This is the fixed 8-hour version; the wake-keeping process ends automatically after 8 hours.
 
 ## Build from Source
 

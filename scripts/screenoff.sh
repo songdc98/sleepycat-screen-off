@@ -1,146 +1,25 @@
 #!/bin/zsh
 set -u
 
-LOG_FILE="${TMPDIR:-/tmp}/sleepycat-screen-off.log"
-LOCK_DIR="${TMPDIR:-/tmp}/sleepycat-screen-off.lock"
-START_DELAY_SECONDS="${SLEEPYCAT_START_DELAY_SECONDS:-3}"
-PMSET_BIN="${SLEEPYCAT_PMSET_BIN:-/usr/bin/pmset}"
-SCRIPT_DIR="${0:A:h}"
-BLACKOUT_BIN="$SCRIPT_DIR/BlackoutFallback"
-caffeinate_pid=""
+LOG_FILE="/tmp/sleepycat-screen-off-8h.log"
+DURATION_SECONDS=28800
 
 log() {
   /bin/echo "$(/bin/date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG_FILE"
 }
 
-acquire_lock() {
-  if /bin/mkdir "$LOCK_DIR" 2>/dev/null; then
-    /bin/echo "$$" > "$LOCK_DIR/pid"
-    return 0
-  fi
-
-  local old_pid
-  old_pid="$(/bin/cat "$LOCK_DIR/pid" 2>/dev/null || true)"
-  if [[ -n "$old_pid" ]] && /bin/kill -0 "$old_pid" 2>/dev/null; then
-    log "Another instance is already running: $old_pid"
-    exit 0
-  fi
-
-  /bin/rm -rf "$LOCK_DIR" 2>/dev/null || true
-  if /bin/mkdir "$LOCK_DIR" 2>/dev/null; then
-    /bin/echo "$$" > "$LOCK_DIR/pid"
-    return 0
-  fi
-
-  log "Could not acquire lock"
-  exit 1
-}
-
-current_idle_seconds() {
-  local idle_ns
-  idle_ns="$(/usr/sbin/ioreg -c IOHIDSystem | /usr/bin/awk '/HIDIdleTime/ {print $NF; exit}')"
-  if [[ -z "$idle_ns" ]]; then
-    /bin/echo 999999
-  else
-    /bin/echo $(( idle_ns / 1000000000 ))
-  fi
-}
-
-request_display_sleep() {
-  local attempt output pmset_status
-  for attempt in 1 2; do
-    output="$("$PMSET_BIN" displaysleepnow 2>&1)"
-    pmset_status=$?
-    if [[ -n "$output" ]]; then
-      log "pmset output on attempt $attempt: $output"
-    fi
-    if [[ "$pmset_status" -eq 0 && "$output" != *"Failed"* && "$output" != *"failed"* && "$output" != *"error"* ]]; then
-      log "Requested display sleep"
-      return 0
-    fi
-    log "Display sleep request failed on attempt $attempt with status $pmset_status"
-    /bin/sleep 1
-  done
-  return 1
-}
-
-start_caffeinate() {
-  if [[ -n "$caffeinate_pid" ]] && /bin/kill -0 "$caffeinate_pid" 2>/dev/null; then
-    return 0
-  fi
-  /usr/bin/caffeinate -i -m -s -w "$$" >> "$LOG_FILE" 2>&1 &
-  caffeinate_pid=$!
-  log "Started caffeinate process: $caffeinate_pid"
-}
-
-run_blackout_fallback() {
-  if [[ "${SLEEPYCAT_NO_FALLBACK:-0}" == "1" ]]; then
-    log "Fallback disabled"
-    return 1
-  fi
-  if [[ ! -x "$BLACKOUT_BIN" ]]; then
-    log "Fallback missing: $BLACKOUT_BIN"
-    return 1
-  fi
-
-  log "Starting blackout fallback"
-  if [[ "${SLEEPYCAT_FALLBACK_SELF_TEST:-0}" == "1" ]]; then
-    "$BLACKOUT_BIN" --self-test >> "$LOG_FILE" 2>&1
-  else
-    "$BLACKOUT_BIN" >> "$LOG_FILE" 2>&1
-  fi
-  log "Blackout fallback exited"
-}
-
-cleanup() {
-  if [[ -n "$caffeinate_pid" ]] && /bin/kill -0 "$caffeinate_pid" 2>/dev/null; then
-    /bin/kill "$caffeinate_pid" 2>/dev/null || true
-    log "Stopped caffeinate process: $caffeinate_pid"
-  fi
-  if [[ -d "$LOCK_DIR" ]] && [[ "$(/bin/cat "$LOCK_DIR/pid" 2>/dev/null || true)" == "$$" ]]; then
-    /bin/rm -rf "$LOCK_DIR" 2>/dev/null || true
-  fi
-}
-
-trap cleanup EXIT INT TERM
-acquire_lock
-
 if [[ "${SLEEPYCAT_DRY_RUN:-0}" == "1" ]]; then
-  log "Dry run: lock acquired, exiting before display sleep"
-  exit 0
-fi
-
-if [[ "${SLEEPYCAT_TEST_REQUEST_SLEEP:-0}" == "1" ]]; then
-  request_display_sleep
+  log "Dry run: fixed 8-hour mode"
   exit $?
 fi
 
-if [[ "${SLEEPYCAT_TEST_FALLBACK:-0}" == "1" ]]; then
-  "$BLACKOUT_BIN" --self-test
-  exit $?
-fi
+log "Starting fixed 8-hour display sleep mode"
+/usr/bin/caffeinate -i -m -t "$DURATION_SECONDS" >> "$LOG_FILE" 2>&1 &
+caffeinate_pid=$!
+log "Started caffeinate process: $caffeinate_pid for ${DURATION_SECONDS}s"
 
-# A Dock click is also mouse activity. Wait briefly so the click does not keep
-# the display-sleep request from being accepted.
-/bin/sleep "$START_DELAY_SECONDS"
-
-if ! request_display_sleep; then
-  log "Could not put displays to sleep"
-  start_caffeinate
-  run_blackout_fallback
-  exit $?
-fi
-
-start_caffeinate
-
-# Give macOS time to enter display sleep before interpreting HID activity.
-/bin/sleep 8
-
-while /bin/kill -0 "$caffeinate_pid" 2>/dev/null; do
-  idle_seconds="$(current_idle_seconds)"
-  if [[ "$idle_seconds" -le 2 ]]; then
-    log "Detected user activity after display sleep"
-    break
-  fi
-  /bin/sleep 5
-done
+/bin/sleep 1
+/usr/bin/pmset displaysleepnow >> "$LOG_FILE" 2>&1
+pmset_status=$?
+log "Requested display sleep with status $pmset_status"
+exit "$pmset_status"

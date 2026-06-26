@@ -17,11 +17,9 @@ cp "$ROOT_DIR/src/Info.plist" "$APP_PATH/Contents/Info.plist"
 cp "$ROOT_DIR/src/launcher.zsh" "$APP_PATH/Contents/MacOS/SleepyCatScreenOff"
 cp "$ROOT_DIR/scripts/screenoff.sh" "$APP_PATH/Contents/Resources/screenoff.sh"
 cp "$ROOT_DIR/assets/AppIcon.icns" "$APP_PATH/Contents/Resources/AppIcon.icns"
-/usr/bin/swiftc "$ROOT_DIR/src/BlackoutFallback.swift" -o "$APP_PATH/Contents/Resources/BlackoutFallback"
 
 chmod 755 "$APP_PATH/Contents/MacOS/SleepyCatScreenOff"
 chmod 755 "$APP_PATH/Contents/Resources/screenoff.sh"
-chmod 755 "$APP_PATH/Contents/Resources/BlackoutFallback"
 printf "APPL????" > "$APP_PATH/Contents/PkgInfo"
 
 codesign --force --deep --sign - "$APP_PATH" >/dev/null
