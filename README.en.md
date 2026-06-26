@@ -24,6 +24,7 @@ If you pin it to the Dock, click it once and wait 4 seconds. Do not double-click
 - Turns off all built-in and external displays.
 - Keeps the Mac itself running instead of sleeping.
 - Turns off all connected extended displays while keeping the computer running normally, which is useful for downloads, long local tasks, and vibe coding.
+- Falls back to a full-screen blackout mode if macOS rejects true display sleep.
 - Uses no network connection and collects no data.
 - Exits automatically after keyboard or mouse activity, so it does not stay resident.
 
@@ -35,6 +36,7 @@ If you pin it to the Dock, click it once and wait 4 seconds. Do not double-click
 - It only puts displays to sleep while trying to keep downloads, computation, syncing, or research tasks running.
 - Behavior can vary across macOS versions, monitors, docks, and power settings.
 - When launching from the Dock, click once and wait a few seconds.
+- The fallback blackout mode is not hardware display power-off, but it prevents a no-op when `pmset displaysleepnow` is rejected by macOS.
 
 ## Build from Source
 

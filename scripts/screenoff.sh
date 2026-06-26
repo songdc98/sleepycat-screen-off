@@ -3,8 +3,10 @@ set -u
 
 LOG_FILE="${TMPDIR:-/tmp}/sleepycat-screen-off.log"
 LOCK_DIR="${TMPDIR:-/tmp}/sleepycat-screen-off.lock"
-START_DELAY_SECONDS="${SLEEPYCAT_START_DELAY_SECONDS:-4}"
+START_DELAY_SECONDS="${SLEEPYCAT_START_DELAY_SECONDS:-3}"
 PMSET_BIN="${SLEEPYCAT_PMSET_BIN:-/usr/bin/pmset}"
+SCRIPT_DIR="${0:A:h}"
+BLACKOUT_BIN="$SCRIPT_DIR/BlackoutFallback"
 caffeinate_pid=""
 
 log() {
@@ -46,7 +48,7 @@ current_idle_seconds() {
 
 request_display_sleep() {
   local attempt output pmset_status
-  for attempt in 1 2 3 4; do
+  for attempt in 1 2; do
     output="$("$PMSET_BIN" displaysleepnow 2>&1)"
     pmset_status=$?
     if [[ -n "$output" ]]; then
@@ -57,9 +59,37 @@ request_display_sleep() {
       return 0
     fi
     log "Display sleep request failed on attempt $attempt with status $pmset_status"
-    /bin/sleep 2
+    /bin/sleep 1
   done
   return 1
+}
+
+start_caffeinate() {
+  if [[ -n "$caffeinate_pid" ]] && /bin/kill -0 "$caffeinate_pid" 2>/dev/null; then
+    return 0
+  fi
+  /usr/bin/caffeinate -i -m -s -w "$$" >> "$LOG_FILE" 2>&1 &
+  caffeinate_pid=$!
+  log "Started caffeinate process: $caffeinate_pid"
+}
+
+run_blackout_fallback() {
+  if [[ "${SLEEPYCAT_NO_FALLBACK:-0}" == "1" ]]; then
+    log "Fallback disabled"
+    return 1
+  fi
+  if [[ ! -x "$BLACKOUT_BIN" ]]; then
+    log "Fallback missing: $BLACKOUT_BIN"
+    return 1
+  fi
+
+  log "Starting blackout fallback"
+  if [[ "${SLEEPYCAT_FALLBACK_SELF_TEST:-0}" == "1" ]]; then
+    "$BLACKOUT_BIN" --self-test >> "$LOG_FILE" 2>&1
+  else
+    "$BLACKOUT_BIN" >> "$LOG_FILE" 2>&1
+  fi
+  log "Blackout fallback exited"
 }
 
 cleanup() {
@@ -85,11 +115,10 @@ if [[ "${SLEEPYCAT_TEST_REQUEST_SLEEP:-0}" == "1" ]]; then
   exit $?
 fi
 
-# Keep the Mac awake only while this script is alive. Do not use -d, because
-# the display should be allowed to sleep.
-/usr/bin/caffeinate -i -m -s -w "$$" >> "$LOG_FILE" 2>&1 &
-caffeinate_pid=$!
-log "Started caffeinate process: $caffeinate_pid"
+if [[ "${SLEEPYCAT_TEST_FALLBACK:-0}" == "1" ]]; then
+  "$BLACKOUT_BIN" --self-test
+  exit $?
+fi
 
 # A Dock click is also mouse activity. Wait briefly so the click does not keep
 # the display-sleep request from being accepted.
@@ -97,8 +126,12 @@ log "Started caffeinate process: $caffeinate_pid"
 
 if ! request_display_sleep; then
   log "Could not put displays to sleep"
-  exit 1
+  start_caffeinate
+  run_blackout_fallback
+  exit $?
 fi
+
+start_caffeinate
 
 # Give macOS time to enter display sleep before interpreting HID activity.
 /bin/sleep 8
