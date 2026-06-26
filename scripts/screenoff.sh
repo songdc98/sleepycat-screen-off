@@ -4,6 +4,7 @@ set -u
 LOG_FILE="${TMPDIR:-/tmp}/sleepycat-screen-off.log"
 LOCK_DIR="${TMPDIR:-/tmp}/sleepycat-screen-off.lock"
 START_DELAY_SECONDS="${SLEEPYCAT_START_DELAY_SECONDS:-4}"
+PMSET_BIN="${SLEEPYCAT_PMSET_BIN:-/usr/bin/pmset}"
 caffeinate_pid=""
 
 log() {
@@ -44,18 +45,18 @@ current_idle_seconds() {
 }
 
 request_display_sleep() {
-  local attempt output status
+  local attempt output pmset_status
   for attempt in 1 2 3 4; do
-    output="$(/usr/bin/pmset displaysleepnow 2>&1)"
-    status=$?
+    output="$("$PMSET_BIN" displaysleepnow 2>&1)"
+    pmset_status=$?
     if [[ -n "$output" ]]; then
       log "pmset output on attempt $attempt: $output"
     fi
-    if [[ "$status" -eq 0 && "$output" != *"Failed"* && "$output" != *"failed"* && "$output" != *"error"* ]]; then
+    if [[ "$pmset_status" -eq 0 && "$output" != *"Failed"* && "$output" != *"failed"* && "$output" != *"error"* ]]; then
       log "Requested display sleep"
       return 0
     fi
-    log "Display sleep request failed on attempt $attempt with status $status"
+    log "Display sleep request failed on attempt $attempt with status $pmset_status"
     /bin/sleep 2
   done
   return 1
@@ -77,6 +78,11 @@ acquire_lock
 if [[ "${SLEEPYCAT_DRY_RUN:-0}" == "1" ]]; then
   log "Dry run: lock acquired, exiting before display sleep"
   exit 0
+fi
+
+if [[ "${SLEEPYCAT_TEST_REQUEST_SLEEP:-0}" == "1" ]]; then
+  request_display_sleep
+  exit $?
 fi
 
 # Keep the Mac awake only while this script is alive. Do not use -d, because
