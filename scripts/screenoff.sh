@@ -74,10 +74,8 @@ log "Started caffeinate process: $caffeinate_pid for ${DURATION_SECONDS}s"
 
 for attempt in 1 2 3 4; do
   log "Display sleep attempt $attempt"
-  if request_display_sleep_iokit; then
-    keep_caffeinate=1
-    exit 0
-  fi
+  request_display_sleep_iokit || true
+  /bin/sleep 1
   if request_display_sleep_pmset; then
     keep_caffeinate=1
     exit 0
