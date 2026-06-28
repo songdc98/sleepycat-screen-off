@@ -20,7 +20,7 @@ log "Started caffeinate process: $caffeinate_pid for ${DURATION_SECONDS}s"
 
 /bin/sleep 1
 
-/usr/bin/pmset displaysleepnow >> "$LOG_FILE" 2>&1
+/usr/bin/osascript -e 'do shell script "/usr/bin/pmset displaysleepnow"' >> "$LOG_FILE" 2>&1
 pmset_status=$?
 log "Requested display sleep with status $pmset_status"
 exit "$pmset_status"
