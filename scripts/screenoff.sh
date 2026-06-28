@@ -4,6 +4,9 @@ set -u
 LOG_FILE="/tmp/sleepycat-screen-off-8h.log"
 LOCK_DIR="/tmp/sleepycat-screen-off.lock"
 DURATION_SECONDS=28800
+INITIAL_DISPLAY_SLEEP_DELAY=5
+DISPLAY_SLEEP_ATTEMPTS=12
+DISPLAY_SLEEP_RETRY_SECONDS=5
 ARM_IDLE_SECONDS=3
 ARM_WAIT_SECONDS=20
 ACTIVITY_IDLE_SECONDS=2
@@ -62,6 +65,26 @@ display_sleep_is_blocked() {
   /usr/bin/pmset -g assertions | /usr/bin/grep -Eq 'NoDisplaySleepAssertion|PreventUserIdleDisplaySleep named'
 }
 
+request_display_sleep() {
+  local pmset_output pmset_status idle_seconds
+
+  idle_seconds="$(current_idle_seconds)"
+  log "Requesting display sleep; input idle=${idle_seconds}s"
+
+  pmset_output="$(/usr/bin/osascript -e 'do shell script "/usr/bin/pmset displaysleepnow 2>&1"' 2>&1)"
+  pmset_status=$?
+  if [[ -n "$pmset_output" ]]; then
+    log "pmset output: $pmset_output"
+  fi
+  if [[ "$pmset_status" -ne 0 || "$pmset_output" == *"Failed"* || "$pmset_output" == *"failed"* || "$pmset_output" == *"error"* ]]; then
+    log "Display sleep request failed with status $pmset_status"
+    return 1
+  fi
+
+  log "Requested display sleep with status $pmset_status"
+  return 0
+}
+
 wait_until_monitor_armed() {
   local waited=0
   local idle_seconds=0
@@ -89,22 +112,28 @@ acquire_lock
 
 log "Starting monitored fixed 8-hour display sleep mode"
 
-if display_sleep_is_blocked; then
-  log "Display sleep is blocked by another process; exiting without caffeinate"
+/bin/sleep "$INITIAL_DISPLAY_SLEEP_DELAY"
+
+display_sleep_started=0
+for attempt in $(/usr/bin/seq 1 "$DISPLAY_SLEEP_ATTEMPTS"); do
+  log "Display sleep attempt $attempt of $DISPLAY_SLEEP_ATTEMPTS"
+  if display_sleep_is_blocked; then
+    log "Display sleep is blocked by another process; exiting without caffeinate"
+    exit 1
+  fi
+
+  if request_display_sleep; then
+    display_sleep_started=1
+    break
+  fi
+
+  /bin/sleep "$DISPLAY_SLEEP_RETRY_SECONDS"
+done
+
+if [[ "$display_sleep_started" -ne 1 ]]; then
+  log "Could not put displays to sleep after retries; exiting without caffeinate"
   exit 1
 fi
-
-pmset_output="$(/usr/bin/osascript -e 'do shell script "/usr/bin/pmset displaysleepnow 2>&1"' 2>&1)"
-pmset_status=$?
-if [[ -n "$pmset_output" ]]; then
-  log "pmset output: $pmset_output"
-fi
-if [[ "$pmset_status" -ne 0 || "$pmset_output" == *"Failed"* || "$pmset_output" == *"failed"* || "$pmset_output" == *"error"* ]]; then
-  log "Display sleep request failed with status $pmset_status; exiting without caffeinate"
-  exit 1
-fi
-
-log "Requested display sleep with status $pmset_status"
 
 /usr/bin/caffeinate -i -m -w "$$" >> "$LOG_FILE" 2>&1 &
 caffeinate_pid=$!
