@@ -6,18 +6,20 @@ Chinese name: 猫猫熄屏
   <img src="assets/icon-cropped-preview.png" width="128" alt="SleepyCat Screen Off icon">
 </p>
 
-A small local-only macOS utility. Double-click `猫猫熄屏.app` to put all connected displays into real display sleep while keeping the Mac awake for 8 hours so downloads, computation, syncing, or local tasks can continue.
+A small local-only macOS utility. Double-click `SleepyCat Screen Off.app` to put all connected displays into real display sleep while keeping the Mac awake for 8 hours so downloads, computation, syncing, or local tasks can continue.
 
 ## Download and Use
 
 1. Download `SleepyCat-Screen-Off-macOS.zip` from GitHub Releases.
-2. Unzip it to get `猫猫熄屏.app`.
+2. Unzip it to get `SleepyCat Screen Off.app`.
 3. Move the app to Applications or Desktop.
 4. Double-click it.
 
-If macOS blocks the app because it is from an unidentified developer, right-click `猫猫熄屏.app` and choose Open the first time.
+If macOS blocks the app because it is from an unidentified developer, right-click `SleepyCat Screen Off.app` and choose Open the first time.
 
 If you pin it to the Dock, click it once. This is the fixed 8-hour version, not an indefinite mode.
+
+Chinese users can download `MaoMao-Screen-Off-macOS.zip`, which contains `猫猫熄屏.app`.
 
 ## What It Does
 
@@ -49,8 +51,10 @@ Maintainers can run this from the project root:
 
 Outputs:
 
+- `build/SleepyCat Screen Off.app`
 - `build/猫猫熄屏.app`
 - `dist/SleepyCat-Screen-Off-macOS.zip`
+- `dist/MaoMao-Screen-Off-macOS.zip`
 
 ## Disclaimer
 
@@ -66,7 +70,7 @@ This tool is free, local-only, and provided as is, without warranty of any kind.
 
 ## 下载使用
 
-1. 在 GitHub Releases 下载 `SleepyCat-Screen-Off-macOS.zip`。
+1. 在 GitHub Releases 下载 `MaoMao-Screen-Off-macOS.zip`。
 2. 解压后得到 `猫猫熄屏.app`。
 3. 把 app 放到“应用程序”或桌面。
 4. 双击运行。
@@ -105,8 +109,10 @@ This tool is free, local-only, and provided as is, without warranty of any kind.
 
 生成结果：
 
+- `build/SleepyCat Screen Off.app`
 - `build/猫猫熄屏.app`
 - `dist/SleepyCat-Screen-Off-macOS.zip`
+- `dist/MaoMao-Screen-Off-macOS.zip`
 
 ## 免责声明
 
