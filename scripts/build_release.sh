@@ -23,12 +23,15 @@ mkdir -p "$BUILD_DIR" "$DIST_DIR"
 /usr/bin/osacompile -o "$APP_PATH" "$ROOT_DIR/src/Launcher.applescript"
 cp "$ROOT_DIR/scripts/screenoff.sh" "$APP_PATH/Contents/Resources/screenoff.sh"
 cp "$ROOT_DIR/assets/AppIcon.icns" "$APP_PATH/Contents/Resources/applet.icns"
+rm -f "$APP_PATH/Contents/Resources/Assets.car"
 
 set_plist_string "CFBundleIdentifier" "com.song.sleepycat-screen-off"
 set_plist_string "CFBundleName" "$APP_NAME"
 set_plist_string "CFBundleDisplayName" "$APP_NAME"
+set_plist_string "CFBundleIconFile" "applet"
 set_plist_string "CFBundleShortVersionString" "1.0.0"
 set_plist_string "CFBundleVersion" "1"
+/usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true
 
 chmod 755 "$APP_PATH/Contents/Resources/screenoff.sh"
 
